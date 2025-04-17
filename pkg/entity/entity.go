@@ -23,6 +23,7 @@ type Character struct {
 	SeenMessage   string
 	BattleMessage string
 	HasDied       bool
+	HasExited     bool
 }
 
 type ID uint8

@@ -101,6 +101,7 @@ func (r *Room) Move(character *entity.Character, x, y int) error {
 	// Check if the new position is an exit
 	if r.Grid[newX][newY].Entity != nil && r.Grid[newX][newY].Entity.ID == entity.ObjExit {
 		r.LogView.WriteString("You have found the exit!\n")
+		character.HasExited = true
 		return nil
 	}
 
@@ -171,6 +172,16 @@ func (r *Room) AddWallsWithDoorway(horizontal bool, position int) {
 }
 
 func (r *Room) AttackEntity(attacker, defender *entity.Character) {
+	if defender.ID == entity.ObjEmpty {
+		r.LogView.WriteString("You attack into the air and almost hit yourself!\n")
+		return
+	}
+
+	if defender.ID == entity.ObjWall {
+		r.LogView.WriteString("You attack and hit a wall!\n")
+		return
+	}
+
 	if defender.HP > 0 {
 		r.LogView.WriteString(fmt.Sprintf("%s attacks %s!\n", attacker.Name, defender.Name))
 		defender.HP -= attacker.Attack

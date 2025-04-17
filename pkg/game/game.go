@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -217,6 +218,11 @@ func (g *Game) ProcessTurn() {
 		return
 	}
 	g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Player action resolved: %s", command))
+
+	if g.Player.HasExited {
+		g.Room.LogView.WriteString("You have exited the game.\n")
+		os.Exit(0)
+	}
 
 	// Example: Enemy turn
 	for _, enemy := range g.Enemies {
