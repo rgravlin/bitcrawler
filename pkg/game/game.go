@@ -102,35 +102,8 @@ func (g *Game) ProcessTurn() {
 			continue
 		}
 
-		if g.Turn%2 != 0 {
-			g.Logger.LogMessage(logging.LogLevelDebug,
-				fmt.Sprintf("Enemy %s is waiting for their turn", enemy.Name))
-			continue
-		}
-		// enemy.PreHook()
-		// enemyChoice := enemy.MoveOrAttack()
-		// enemy.Attack()
-		// enemy.ProcessMovement()
-		// enemy.PostHook()
-		// Pre Hooks
-
-		g.Logger.LogMessage(logging.LogLevelDebug,
-			fmt.Sprintf("Enemy %s takes its turn", enemy.Name))
-
-		// calculate the direction vector
-		dx := g.Player.X - enemy.X
-		dy := g.Player.Y - enemy.Y
-
-		// Normalize the direction vector
-		dxx, dxy := calculateVector(dx, dy)
-		g.Logger.LogMessage(logging.LogLevelDebug,
-			fmt.Sprintf("Enemy %s direction vector: (%d, %d)", enemy.Name, dxx, dxy))
-
-		// Move enemy towards player
-		if err := g.Room.Move(enemy, dxx, dxy); err != nil {
-			g.Room.LogView.WriteString(err.Error() + "\n")
-		} else {
-			g.Room.LogView.WriteString(fmt.Sprintf("%s moves towards the player\n", enemy.Name))
+		if enemy.Name == "Goblin" {
+			goblinMoveOrAttack(g, enemy)
 		}
 	}
 }
@@ -236,4 +209,30 @@ func (g *Game) resolveUserInput(input string) error {
 	}
 
 	return nil
+}
+
+func goblinMoveOrAttack(g *Game, enemy *entity.Character) {
+	if g.Turn%2 != 0 {
+		g.Logger.LogMessage(logging.LogLevelDebug,
+			fmt.Sprintf("Enemy %s is waiting for their turn", enemy.Name))
+		return
+	}
+
+	g.Logger.LogMessage(logging.LogLevelDebug,
+		fmt.Sprintf("Enemy %s takes its turn", enemy.Name))
+
+	// calculate the direction vector
+	dx, dy := calculateDirectionVector(g.Player.X, g.Player.Y, enemy.X, enemy.Y)
+
+	// Normalize the direction vector
+	dxx, dxy := normalizeVector(dx, dy)
+	g.Logger.LogMessage(logging.LogLevelDebug,
+		fmt.Sprintf("Enemy %s direction vector: (%d, %d)", enemy.Name, dxx, dxy))
+
+	// Move enemy towards player
+	if err := g.Room.Move(enemy, dxx, dxy); err != nil {
+		g.Room.LogView.WriteString(err.Error() + "\n")
+	} else {
+		g.Room.LogView.WriteString(fmt.Sprintf("%s moves towards the player\n", enemy.Name))
+	}
 }

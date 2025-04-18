@@ -104,17 +104,21 @@ func getUserInput() (string, error) {
 	return str, nil
 }
 
-func calculateVector(x, y int) (int, int) {
+func calculateDirectionVector(x1, y1, x2, y2 int) (int, int) {
+	return x1 - x2, y1 - y2
+}
+
+func normalizeVector(x, y int) (int, int) {
 	var dx, dy int
 	if x > 0 {
 		dx = Right
-	} else {
+	} else if x < 0 {
 		dx = Left
 	}
 
 	if y > 0 {
 		dy = Up
-	} else {
+	} else if y < 0 {
 		dy = Down
 	}
 

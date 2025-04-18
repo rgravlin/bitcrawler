@@ -67,7 +67,11 @@ func (r *Room) DrawRoom() {
 			case entity.ObjEmpty:
 				builder.WriteString(". ")
 			case entity.ObjPlayer, entity.ObjEnemy:
-				builder.WriteString(string(r.Grid[x][y].Entity.Visual) + " ")
+				if r.Grid[x][y].Entity.ID == entity.ObjEnemy && r.Grid[x][y].Entity.HasDied {
+					builder.WriteString("x ")
+				} else {
+					builder.WriteString(string(r.Grid[x][y].Entity.Visual) + " ")
+				}
 			case entity.ObjWall:
 				builder.WriteString("# ")
 			default:
