@@ -3,8 +3,6 @@ package game
 import (
 	"fmt"
 	"os"
-	"slices"
-	"strings"
 	"time"
 
 	"bitcrawler/pkg/entity"
@@ -62,6 +60,81 @@ var (
 	}
 )
 
+func (g *Game) ProcessTurn() {
+	g.Turn = (g.Turn + 1) % 256
+	g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Game turn %d", g.Turn))
+
+	g.Room.DrawRoom()
+	g.Logger.LogMessage(logging.LogLevelDebug, "Room drawn")
+
+	fmt.Println("Player's turn. Enter a command (e.g., move, attack):")
+	command, err := getUserInput()
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return
+	}
+	g.Logger.LogMessage(logging.LogLevelDebug,
+		fmt.Sprintf("Input: %s", command))
+
+	if err := g.resolveUserInput(command); err != nil {
+		g.Room.LogView.WriteString(err.Error() + "\n")
+		return
+	}
+	g.Logger.LogMessage(logging.LogLevelDebug,
+		fmt.Sprintf("Player action resolved: %s", command))
+
+	if g.Player.HasExited {
+		g.Room.LogView.WriteString("You have exited the game.\n")
+		os.Exit(0)
+	}
+
+	// Example: Enemy turn
+	for _, enemy := range g.Enemies {
+		if enemy.HP <= 0 && enemy.HasDied {
+			g.Logger.LogMessage(logging.LogLevelDebug,
+				fmt.Sprintf("Enemy %s is dead and cannot take its turn", enemy.Name))
+			continue
+		} else if enemy.HP <= 0 && !enemy.HasDied {
+			g.Logger.LogMessage(logging.LogLevelDebug,
+				fmt.Sprintf("Enemy %s has died", enemy.Name))
+			enemy.HasDied = true
+			g.Room.LogView.WriteString(enemy.DeathMessage)
+			continue
+		}
+
+		if g.Turn%2 != 0 {
+			g.Logger.LogMessage(logging.LogLevelDebug,
+				fmt.Sprintf("Enemy %s is waiting for their turn", enemy.Name))
+			continue
+		}
+		// enemy.PreHook()
+		// enemyChoice := enemy.MoveOrAttack()
+		// enemy.Attack()
+		// enemy.ProcessMovement()
+		// enemy.PostHook()
+		// Pre Hooks
+
+		g.Logger.LogMessage(logging.LogLevelDebug,
+			fmt.Sprintf("Enemy %s takes its turn", enemy.Name))
+
+		// calculate the direction vector
+		dx := g.Player.X - enemy.X
+		dy := g.Player.Y - enemy.Y
+
+		// Normalize the direction vector
+		dxx, dxy := calculateVector(dx, dy)
+		g.Logger.LogMessage(logging.LogLevelDebug,
+			fmt.Sprintf("Enemy %s direction vector: (%d, %d)", enemy.Name, dxx, dxy))
+
+		// Move enemy towards player
+		if err := g.Room.Move(enemy, dxx, dxy); err != nil {
+			g.Room.LogView.WriteString(err.Error() + "\n")
+		} else {
+			g.Room.LogView.WriteString(fmt.Sprintf("%s moves towards the player\n", enemy.Name))
+		}
+	}
+}
+
 func (g *Game) movePlayerOnInput(input string) error {
 	if len(input) == 0 {
 		return fmt.Errorf("cannot move without a direction")
@@ -96,39 +169,6 @@ func (g *Game) movePlayerOnInput(input string) error {
 	}
 
 	return nil
-}
-
-func resolveActionObject(input string) (string, string, error) {
-	var action, object string
-	cmd := strings.Split(input, " ")
-	if len(cmd) < 2 {
-		return action, object, fmt.Errorf("invalid command")
-	}
-
-	// check for a valid command
-	endOfInput := len(cmd) - 1
-	var validCmdIndex, validObjIndex int
-	for i, v := range cmd {
-		if slices.Contains(ValidCommands, strings.ToLower(v)) {
-			// a valid command needs an object after it
-			if i < endOfInput {
-				validCmdIndex = i
-				validObjIndex = i + 1
-				break
-			} else {
-				return action, object, fmt.Errorf("invalid command")
-			}
-		}
-
-		// a valid command must be in the input
-		if i == endOfInput {
-			return action, object, fmt.Errorf("unknown input")
-		}
-	}
-
-	action = strings.ToLower(cmd[validCmdIndex])
-	object = strings.ToLower(cmd[validObjIndex])
-	return action, object, nil
 }
 
 func (g *Game) resolveUserInput(input string) error {
@@ -196,93 +236,4 @@ func (g *Game) resolveUserInput(input string) error {
 	}
 
 	return nil
-}
-
-func (g *Game) ProcessTurn() {
-	g.Turn = (g.Turn + 1) % 256
-	g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Game turn %d", g.Turn))
-
-	g.Room.DrawRoom()
-	g.Logger.LogMessage(logging.LogLevelDebug, "Room drawn")
-
-	fmt.Println("Player's turn. Enter a command (e.g., move, attack):")
-	command, err := getUserInput()
-	if err != nil {
-		fmt.Println("Error reading input:", err)
-		return
-	}
-	g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Input: %s", command))
-
-	if err := g.resolveUserInput(command); err != nil {
-		g.Room.LogView.WriteString(err.Error() + "\n")
-		return
-	}
-	g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Player action resolved: %s", command))
-
-	if g.Player.HasExited {
-		g.Room.LogView.WriteString("You have exited the game.\n")
-		os.Exit(0)
-	}
-
-	// Example: Enemy turn
-	for _, enemy := range g.Enemies {
-		if enemy.HP <= 0 && enemy.HasDied {
-			g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Enemy %s is dead and cannot take its turn", enemy.Name))
-			continue
-		} else if enemy.HP <= 0 && !enemy.HasDied {
-			g.Logger.LogMessage(logging.LogLevelDebug, fmt.Sprintf("Enemy %s has died", enemy.Name))
-			enemy.HasDied = true
-			g.Room.LogView.WriteString(enemy.DeathMessage)
-			continue
-		}
-
-		if g.Turn%2 != 0 {
-			continue
-		}
-		// enemy.PreHook()
-		// enemyChoice := enemy.MoveOrAttack()
-		// enemy.Attack()
-		// enemy.ProcessMovement()
-		// enemy.PostHook()
-		// Pre Hooks
-
-		// Check if the enemy is alive
-		//if enemy.HP <= 0 {
-		//	g.Room.LogView.WriteString(enemy.DeathMessage)
-		//	g.Enemies[i] = nil
-		//	continue
-		//}
-
-		// g.Room.LogView.WriteString(fmt.Sprintf("Enemy %s takes its turn\n", enemy.Name))
-
-		// calculate the direction vector
-		dx := g.Player.X - enemy.X
-		dy := g.Player.Y - enemy.Y
-
-		var dxx, dxy int
-		// Normalize the direction vector
-		if dx > 0 {
-			dxx = Right
-		}
-
-		if dx < 0 {
-			dxx = Left
-		}
-
-		if dy > 0 {
-			dxy = Up
-		}
-
-		if dy < 0 {
-			dxy = Down
-		}
-
-		// g.Room.LogView.WriteString("Enemy direction vector: " + fmt.Sprintf("(%d, %d)\n", dxx, dxy))
-		// Move enemy towards player
-		if err := g.Room.Move(enemy, dxx, dxy); err != nil {
-			g.Room.LogView.WriteString(err.Error() + "\n")
-		} else {
-			g.Room.LogView.WriteString(fmt.Sprintf("%s moves towards the player\n", enemy.Name))
-		}
-	}
 }

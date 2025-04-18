@@ -218,21 +218,6 @@ func (r *Room) AttackDirection(x1, y1, x2, y2 int) error {
 	return nil
 }
 
-func (r *Room) GenerateEnemies(enemyCount int) []*entity.Character {
-	enemies := make([]*entity.Character, enemyCount)
-	for i := 0; i < enemyCount; i++ {
-		enemyX, enemyY := r.FindEmptySpace()
-		if enemyX == -1 && enemyY == -1 {
-			// can't find empty space so don't spawn the enemy
-			continue
-		}
-		enemy := &entity.Character{X: enemyX, Y: enemyY, ID: entity.ObjEnemy, Name: "Goblin", HP: 30, Attack: 5, Defense: 2, Visual: 'G'}
-		r.AddEntity(&Coordinate{X: enemyX, Y: enemyY, Entity: enemy})
-		enemies[i] = enemy
-	}
-	return enemies
-}
-
 func (r *Room) FindEmptySpace() (int, int) {
 	// put all empty space into a list
 	emptySpaces := make([]*Coordinate, 0)
@@ -252,4 +237,46 @@ func (r *Room) FindEmptySpace() (int, int) {
 	// pick a random empty space
 	randIndex := rand.Intn(len(emptySpaces))
 	return emptySpaces[randIndex].X, emptySpaces[randIndex].Y
+}
+
+func (r *Room) FindFarthestDistance(playerX, playerY int, skipWalls bool) (int, int) {
+	maxX, maxY := 0, 0
+	maxDistance := 0.0
+
+	for x := 0; x < r.Width; x++ {
+		for y := 0; y < r.Height; y++ {
+			if skipWalls {
+				if r.Grid[x][y].Entity.ID == entity.ObjWall {
+					continue
+				}
+			}
+			distance := Distance(float64(playerX), float64(playerY), float64(x), float64(y))
+			if distance > maxDistance {
+				maxDistance = distance
+				maxX, maxY = x, y
+			}
+		}
+	}
+
+	return maxX, maxY
+}
+
+func (r *Room) AddRandomEntities(template entity.Character, entityCount int) []*entity.Character {
+	entities := make([]*entity.Character, entityCount)
+	for i := 0; i < entityCount; i++ {
+		entityX, entityY := r.FindEmptySpace()
+		if entityX == -1 && entityY == -1 {
+			// can't find empty space so don't spawn the e
+			continue
+		}
+
+		e := &entity.Character{}
+		*e = template
+		e.X = entityX
+		e.Y = entityY
+		r.AddEntity(&Coordinate{X: entityX, Y: entityY, Entity: e})
+		entities[i] = e
+	}
+
+	return entities
 }

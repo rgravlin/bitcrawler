@@ -2,9 +2,44 @@ package game
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"slices"
 	"strings"
 )
+
+func resolveActionObject(input string) (string, string, error) {
+	var action, object string
+	cmd := strings.Split(input, " ")
+	if len(cmd) < 2 {
+		return action, object, fmt.Errorf("invalid command")
+	}
+
+	// check for a valid command
+	endOfInput := len(cmd) - 1
+	var validCmdIndex, validObjIndex int
+	for i, v := range cmd {
+		if slices.Contains(ValidCommands, strings.ToLower(v)) {
+			// a valid command needs an object after it
+			if i < endOfInput {
+				validCmdIndex = i
+				validObjIndex = i + 1
+				break
+			} else {
+				return action, object, fmt.Errorf("invalid command")
+			}
+		}
+
+		// a valid command must be in the input
+		if i == endOfInput {
+			return action, object, fmt.Errorf("unknown input")
+		}
+	}
+
+	action = strings.ToLower(cmd[validCmdIndex])
+	object = strings.ToLower(cmd[validObjIndex])
+	return action, object, nil
+}
 
 func resolveDirection(input string) (int, int) {
 	switch input {
@@ -67,4 +102,21 @@ func getUserInput() (string, error) {
 	str = strings.ToLower(input)
 
 	return str, nil
+}
+
+func calculateVector(x, y int) (int, int) {
+	var dx, dy int
+	if x > 0 {
+		dx = Right
+	} else {
+		dx = Left
+	}
+
+	if y > 0 {
+		dy = Up
+	} else {
+		dy = Down
+	}
+
+	return dx, dy
 }
