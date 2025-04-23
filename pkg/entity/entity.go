@@ -6,7 +6,7 @@ type Character struct {
 	HP            int
 	Attack        int
 	Defense       int
-	Abilities     []string
+	Abilities     []Ability
 	Visual        rune
 	PreHook       func(*Character)
 	PostHook      func(*Character)
@@ -24,6 +24,18 @@ type Character struct {
 	BattleMessage string
 	HasDied       bool
 	HasExited     bool
+}
+
+type Ability struct {
+	Name        string
+	Description string
+	Effect      Effect
+}
+
+type Effect struct {
+	Attack  int
+	Defense int
+	HP      int
 }
 
 type ID uint8
