@@ -71,58 +71,9 @@ func main() {
 	rm.AddEntity(&room.Coordinate{X: exitX, Y: exitY, Entity: exit})
 	logger.LogMessage(logging.LogLevelDebug, "Exit added to the room")
 
-	// Add the enemies
-	goblinEnemyCount := rand.Intn(2) + 1
-	goblinEnemyTemplate := entity.Character{
-		ID:      entity.ObjEnemy,
-		Name:    "Goblin",
-		HP:      30,
-		Attack:  10,
-		Defense: 2,
-		Visual:  'g',
-	}
-
-	goblinLeaderX, goblinLeaderY := rm.FindEmptySpace()
-	goblinLeaderEnemyTemplate := entity.Character{
-		X:       goblinLeaderX,
-		Y:       goblinLeaderY,
-		ID:      entity.ObjEnemy,
-		Name:    "Goblin Leader",
-		HP:      30,
-		Attack:  15,
-		Defense: 5,
-		Visual:  'G',
-	}
-
-	emptyX, emptyY := rm.FindEmptySpace()
-	emptyArea := rm.FindEmptySpacesCloseTogether(emptyX, emptyY, 1)
-	logger.LogMessage(logging.LogLevelDebug,
-		fmt.Sprintf("Empty area found at coordinates: (%d, %d)", emptyX, emptyY))
-
-	for i := 0; i < goblinEnemyCount; i++ {
-		if len(emptyArea) == 0 {
-			break
-		}
-
-		for _, coord := range emptyArea {
-			if coord.Entity == nil || coord.Entity.ID == entity.ObjEmpty {
-
-				rm.AddEntity(&room.Coordinate{X: coord.X, Y: coord.Y, Entity: &goblinEnemyTemplate})
-				logger.LogMessage(logging.LogLevelDebug,
-					fmt.Sprintf("Enemy added at coordinates: (%d, %d)", coord.X, coord.Y))
-			}
-		}
-	}
-
-	enemies := rm.AddRandomEntities(goblinEnemyTemplate, goblinEnemyCount)
-	logger.LogMessage(logging.LogLevelDebug,
-		fmt.Sprintf("%d enemies added to the room", goblinEnemyCount))
-
-	// Add the goblin leader to the enemy list
-	enemies = append(enemies, &goblinLeaderEnemyTemplate)
-
-	// Update the coordinate of the goblin leader
-	rm.AddEntity(&room.Coordinate{X: goblinLeaderX, Y: goblinLeaderY, Entity: &goblinLeaderEnemyTemplate})
+	// Setup our enemies
+	goblinEnemyCount := rand.Intn(2)
+	enemies := rm.PlaceGoblinPack(goblinEnemyCount, true)
 
 	gameBoard := &game.Game{StartTime: startTime, Logger: logger, Room: rm, Player: player, Enemies: enemies}
 	logger.LogMessage(logging.LogLevelDebug, "Game board initialized")

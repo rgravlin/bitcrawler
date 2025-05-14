@@ -111,7 +111,7 @@ func (r *Room) Move(character *entity.Character, x, y int) error {
 
 	// Check if we're both enemies
 	if r.Grid[newX][newY].Entity != nil && r.Grid[newX][newY].Entity.ID == entity.ObjEnemy && character.ID == entity.ObjEnemy {
-		return errors.New("you cannot move into another enemy")
+		return errors.New("Enemies cannot move into each other")
 	}
 
 	// Check if the new position is an enemy or player

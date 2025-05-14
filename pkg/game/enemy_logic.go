@@ -27,7 +27,7 @@ func goblinMoveOrAttack(g *Game, enemy *entity.Character) {
 
 	// Move enemy towards player
 	if err := g.Room.Move(enemy, dxx, dxy); err != nil {
-		g.Room.LogView.WriteString(err.Error() + "\n")
+		g.Logger.LogMessage(logging.LogLevelDebug, err.Error())
 	} else {
 		g.Room.LogView.WriteString(fmt.Sprintf("%s moves towards the player\n", enemy.Name))
 	}
