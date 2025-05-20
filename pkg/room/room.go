@@ -111,7 +111,7 @@ func (r *Room) Move(character *entity.Character, x, y int) error {
 
 	// Check if we're both enemies
 	if r.Grid[newX][newY].Entity != nil && r.Grid[newX][newY].Entity.ID == entity.ObjEnemy && character.ID == entity.ObjEnemy {
-		return errors.New("you cannot move into another enemy")
+		return errors.New("Enemies cannot move into each other")
 	}
 
 	// Check if the new position is an enemy or player
@@ -188,7 +188,24 @@ func (r *Room) AttackEntity(attacker, defender *entity.Character) {
 
 	if defender.HP > 0 {
 		r.LogView.WriteString(fmt.Sprintf("%s attacks %s!\n", attacker.Name, defender.Name))
-		defender.HP -= attacker.Attack
+
+		// calculate abilities
+		var attackerAttackIncrease int
+		var defenderDefenseIncrease int
+
+		if len(attacker.Abilities) > 0 {
+			for _, ability := range attacker.Abilities {
+				attackerAttackIncrease += ability.Effect.Attack
+			}
+		}
+
+		if len(defender.Abilities) > 0 {
+			for _, ability := range defender.Abilities {
+				defenderDefenseIncrease += ability.Effect.Defense
+			}
+		}
+
+		defender.HP -= (attacker.Attack + attackerAttackIncrease) - (defender.Defense - defenderDefenseIncrease)
 		if defender.HP <= 0 {
 			r.LogView.WriteString(fmt.Sprintf("%s is defeated!\n", defender.Name))
 		} else {
@@ -241,6 +258,22 @@ func (r *Room) FindEmptySpace() (int, int) {
 	// pick a random empty space
 	randIndex := rand.Intn(len(emptySpaces))
 	return emptySpaces[randIndex].X, emptySpaces[randIndex].Y
+}
+
+func (r *Room) FindEmptySpacesCloseTogether(x, y, distance int) []*Coordinate {
+	emptySpaces := make([]*Coordinate, 0)
+	for i := x - distance; i <= x+distance; i++ {
+		for j := y - distance; j <= y+distance; j++ {
+			// skip walls and out of bounds
+			if i < 0 || i >= r.Width-1 || j < 0 || j >= r.Height-1 {
+				continue
+			}
+			if r.Grid[i][j].Entity.ID == entity.ObjEmpty {
+				emptySpaces = append(emptySpaces, r.Grid[i][j])
+			}
+		}
+	}
+	return emptySpaces
 }
 
 func (r *Room) FindFarthestDistance(playerX, playerY int, skipWalls bool) (int, int) {

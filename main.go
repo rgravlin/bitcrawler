@@ -7,6 +7,7 @@ import (
 
 	"bitcrawler/pkg/entity"
 	"bitcrawler/pkg/game"
+	"bitcrawler/pkg/gear"
 	"bitcrawler/pkg/logging"
 	"bitcrawler/pkg/room"
 )
@@ -35,14 +36,15 @@ func main() {
 
 	// Initialize our player character with our random coordinates
 	player := &entity.Character{
-		X:       randX,
-		Y:       randY,
-		ID:      entity.ObjPlayer,
-		Name:    "Hero",
-		HP:      100,
-		Attack:  10,
-		Defense: 5,
-		Visual:  '@',
+		X:         randX,
+		Y:         randY,
+		ID:        entity.ObjPlayer,
+		Name:      "Hero",
+		HP:        100,
+		Attack:    10,
+		Defense:   5,
+		Visual:    '@',
+		Abilities: []entity.Ability{gear.AbilityMightStrength},
 	}
 	logger.LogMessage(logging.LogLevelDebug,
 		fmt.Sprintf("Player initialized at coordinates: (%d, %d)", randX, randY))
@@ -58,9 +60,9 @@ func main() {
 
 	// Create the exit
 	exit := &entity.Character{
-		X: exitX,
-		Y: exitY,
-		ID: entity.ObjExit,
+		X:    exitX,
+		Y:    exitY,
+		ID:   entity.ObjExit,
 		Name: "Exit",
 	}
 	logger.LogMessage(logging.LogLevelDebug, "Exit created")
@@ -69,19 +71,9 @@ func main() {
 	rm.AddEntity(&room.Coordinate{X: exitX, Y: exitY, Entity: exit})
 	logger.LogMessage(logging.LogLevelDebug, "Exit added to the room")
 
-	// Add the enemies
-	enemyCount := rand.Intn(3) + 1
-	enemyTemplate := entity.Character{
-		ID:      entity.ObjEnemy,
-		Name:    "Goblin",
-		HP:      30,
-		Attack:  5,
-		Defense: 2,
-		Visual:  'G',
-	}
-	enemies := rm.AddRandomEntities(enemyTemplate, enemyCount)
-	logger.LogMessage(logging.LogLevelDebug,
-		fmt.Sprintf("%d enemies added to the room", enemyCount))
+	// Setup our enemies
+	goblinEnemyCount := rand.Intn(2)
+	enemies := rm.PlaceGoblinPack(goblinEnemyCount, true)
 
 	gameBoard := &game.Game{StartTime: startTime, Logger: logger, Room: rm, Player: player, Enemies: enemies}
 	logger.LogMessage(logging.LogLevelDebug, "Game board initialized")
